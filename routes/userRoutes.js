@@ -17,11 +17,16 @@ router.post(
   Login
 );
 router.post(
-  '/register',
+  '/signup',
   [
     check('username', 'Username is required').notEmpty(),
     check('email', 'Valid email is required').isEmail(),
     check('password', 'Password must be at least 6 characters').isLength({ min: 6 }),
+    check('password2', 'Password must be at least 6 characters').isLength({ min: 6 }),
+    check('address', 'Adrdress is required').notEmpty(),
+    check('phoneNo', 'Phone no is required').notEmpty(),
+    check('gender', 'Gender is required').notEmpty(),
+
   ],
  Register // Use the registerUser function from the userController
 );

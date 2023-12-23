@@ -2,14 +2,12 @@ const express = require("express");
 const router = express.Router();
 const carrentalController = require("../controllers/carrentalController");
 
-router.get('/', carrentalController.getAllCarRentals);
+router.get("/carrentals", carrentalController.getAllCarRentals);
 
-router.post('/', carrentalController.createCarRental);
+router.get("/carrentals/:id", carrentalController.getCarRentalById);
 
-router.get('/:id', carrentalController.getCarRentalById);
+router.put("/carrentals/:id", carrentalController.updateCarRental);
 
-router.put('/:id', carrentalController.updateCarRental);
-
-router.delete('/:id', carrentalController.deleteCarRental);
+router.delete("/carrentals/:id", carrentalController.deleteCarRental);
 
 module.exports = router;

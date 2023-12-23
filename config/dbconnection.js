@@ -1,21 +1,21 @@
-const mysql = require("mysql");
+const mysql = require("mysql2/promise");
 
 const connectDB = async () => {
   try {
-    await mysql.createConnection({
-      host :'localhost',
-      user:'subulraza',
-      password:'123456',
-      database:'carnow'
-    }) 
+    const connection = await mysql.createConnection({
+      host: 'localhost',
+      user: 'subulraza',
+      password: '123456',
+      database: 'carnow'
+    });
+
     console.log("Mysql connection SUCCESS");
+
+    return connection;
   } catch (error) {
-    console.log(error);
-    console.error("Mysql connection FAIL");
-    con.query(sql, function (err, result) {
-      if (err) throw err;
-      console.log("Result: " + result);}``)
-    process.exit(1);
+    console.error("Mysql connection FAIL", error);
+    throw error;
   }
 };
+
 module.exports = connectDB;

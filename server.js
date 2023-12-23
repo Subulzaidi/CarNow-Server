@@ -11,10 +11,10 @@ connectDB();
 
 app.use(express.json()); // Add this to parse JSON requests
 app.use(cors());
-
+const carRouters = require("./routes/carRentalRoutes");
 const userRouters = require("./routes/userRoutes");
 app.use("/api", userRouters);
-app.use("/api", require("./routes/carRentalRoutes"));
+app.use("/api", carRouters);
 app.use(errorHandler);
 
 app.listen(port, () => {
