@@ -1,15 +1,13 @@
 const asyncHandler = require("express-async-handler");
-const connectDB = require("../config/dbconnection");
-// Import any necessary modules and models as needed
+const CarModel = require("../models/CarModel");
 
 // @desc Get all car rentals
 // @route GET /api/carrentals
 // @access Public
 const getAllCarRentals = asyncHandler(async (req, res) => {
   try {
-    const connection = await connectDB();
-    const [rows, fields] = await connection.query("SELECT * FROM cars ");
-    res.status(200).json(rows);
+    const cars = await CarModel.getAllCars();
+    res.status(200).json(cars);
   } catch (error) {
     console.error(error);
     res.status(500).json({ message: "Internal Server Error" });
@@ -21,18 +19,9 @@ const getAllCarRentals = asyncHandler(async (req, res) => {
 // @access Public
 const getCarRentalById = asyncHandler(async (req, res) => {
   try {
-    const connection = await connectDB();
-    const [rows, fields] = await connection.query(
-      "SELECT * FROM cars WHERE id = ?",
-      [req.params.id]
-    );
+    const car = await CarModel.getCarById(req.params.id);
 
-    if (rows.length === 0) {
-      res.status(404).json({ message: "Car rental not found" });
-      return;
-    }
-
-    res.status(200).json(rows[0]);
+    res.status(200).json(car);
   } catch (error) {
     console.error(error);
     res.status(500).json({ message: "Internal Server Error" });
@@ -44,7 +33,6 @@ const getCarRentalById = asyncHandler(async (req, res) => {
 // @access Public
 const updateCarRental = asyncHandler(async (req, res) => {
   try {
-    const connection = await connectDB();
     const { name, email, contact } = req.body;
 
     if (!name || !email || !contact) {
@@ -52,14 +40,9 @@ const updateCarRental = asyncHandler(async (req, res) => {
       return;
     }
 
-    await connection.query(
-      "UPDATE cars SET name = ?, email = ?, contact = ? WHERE id = ?",
-      [name, email, contact, req.params.id]
-    );
+    const result = await CarModel.updateCarById(req.params.id, req.body);
 
-    res
-      .status(200)
-      .json({ message: `Update car rental for ID ${req.params.id}` });
+    res.status(200).json({ message: result });
   } catch (error) {
     console.error(error);
     res.status(500).json({ message: "Internal Server Error" });
@@ -71,14 +54,56 @@ const updateCarRental = asyncHandler(async (req, res) => {
 // @access Public
 const deleteCarRental = asyncHandler(async (req, res) => {
   try {
-    const connection = await connectDB();
-    await connection.query("DELETE FROM cars WHERE id = ?", [req.params.id]);
-    res
-      .status(200)
-      .json({ message: `Delete car rental for ID ${req.params.id}` });
+    const result = await CarModel.deleteCarById(req.params.id);
+    res.status(200).json({ message: result });
   } catch (error) {
     console.error(error);
     res.status(500).json({ message: "Internal Server Error" });
+  }
+});
+
+// @desc Rent a car
+// @route POST /api/rentcar
+// @access Public
+const RentingACar = asyncHandler(async (req, res) => {
+  try {
+    const result = await CarModel.rentCar(req.body);
+    res.status(200).json({ message: result });
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({ message: "Internal Server Error" });
+  }
+});
+
+const makePayment = asyncHandler(async (req, res) => {
+  const {
+    car_ID,
+    email,
+    end_date,
+    Start_date,
+    address,
+    Cnic,
+    LicenseNO,
+    total_days,
+  } = req.body;
+  console.log(req.body);
+  try {
+    // Make payment using the Payment model
+    const paymentResult = await CarModel.makePayment(
+      car_ID,
+      email,
+      end_date,
+      Start_date,
+      address,
+      Cnic,
+      LicenseNO,
+      total_days
+    );
+
+    res.status(200).json(paymentResult);
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({ error: "Internal Server Error" });
   }
 });
 
@@ -87,4 +112,6 @@ module.exports = {
   getCarRentalById,
   updateCarRental,
   deleteCarRental,
+  RentingACar,
+  makePayment,
 };
