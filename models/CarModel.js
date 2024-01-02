@@ -16,11 +16,11 @@ class CarModel {
 
   static async getCarById(id) {
     try {
+      console.log(id);
       const connection = await connectDB();
-      const [rows, fields] = await connection.query(
-        "SELECT * FROM cars WHERE id = ?",
-        [id]
-      );
+      const [rows] = await connection.query("SELECT * FROM cars WHERE id = ?", [
+        id,
+      ]);
 
       if (rows.length === 0) {
         throw new Error("Car not found");
@@ -48,6 +48,20 @@ class CarModel {
       );
 
       return `Update car rental for ID ${id}`;
+    } catch (error) {
+      console.error(error);
+      throw new Error("Internal Server Error");
+    }
+  }
+
+  static async GetAllRecord(email) {
+    try {
+      const connection = await connectDB();
+      const [res] = await connection.query("SELECT * FROM rented_car_records", [
+        email,
+      ]);
+      console.log(res);
+      return res;
     } catch (error) {
       console.error(error);
       throw new Error("Internal Server Error");
@@ -93,7 +107,7 @@ class CarModel {
 
       // Check if email is already taken
       const [carRows] = await connection.execute(
-        "SELECT id, daily_rate FROM cars WHERE id = ?",
+        "SELECT id, daily_rate, model, color, make, registration_number FROM cars WHERE id = ?",
         [car_ID]
       );
 
@@ -101,7 +115,14 @@ class CarModel {
         throw new Error("Car not found");
       }
 
-      const { id: carId, daily_rate } = carRows[0];
+      const {
+        id: carId,
+        daily_rate,
+        model,
+        color,
+        make,
+        registration_number,
+      } = carRows[0];
 
       const [userRows] = await connection.execute(
         "SELECT email FROM user WHERE email = ?",
@@ -114,7 +135,21 @@ class CarModel {
 
       // Insert RENTED_CAR into the database using parameterized query
       const [insertResult] = await connection.execute(
-        "INSERT INTO RENTED_CAR (car_ID, email, end_date, Start_date, address, Cnic, LicenseNO, total_days) VALUES (?, ?, ?, ?, ?, ?, ?, ?)",
+        `INSERT INTO rented_car_records (
+        car_ID,
+        email,
+        end_date,
+        Start_date,
+        address,
+        Cnic,
+        LicenseNO,
+        total_days,
+        price,
+        car_model,
+        color,
+        maker,
+        registration_No
+      ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
         [
           carId,
           email,
@@ -124,19 +159,17 @@ class CarModel {
           Cnic,
           LicenseNO,
           total_days,
+          daily_rate * total_days, // calculated price
+          model,
+          color,
+          make,
+          registration_number,
         ]
       );
 
-      const pricing = daily_rate * total_days;
-
-      // Update RENTED_CAR with pricing information
-      const updateRentedCarQuery =
-        "UPDATE RENTED_CAR SET price = ? WHERE car_ID = ? AND email = ?";
-      await connection.execute(updateRentedCarQuery, [pricing, carId, email]);
-
-      //   const updateCarQuery = "UPDATE cars SET availability = ? WHERE id = ?";
-      //   const availabilityValue = 0;
-      //   await connection.execute(updateCarQuery, [availabilityValue, carId]);
+      const updateCarQuery = "UPDATE cars SET availability = ? WHERE id = ?";
+      const availabilityValue = 0;
+      await connection.execute(updateCarQuery, [availabilityValue, carId]);
 
       return "Details are inserted!";
     } catch (error) {
@@ -144,6 +177,7 @@ class CarModel {
       throw new Error("Internal server error");
     }
   }
+
   static async makePayment(
     car_ID,
     email,
@@ -158,25 +192,38 @@ class CarModel {
       // Retrieve car details from the database
       const carDetails = await this.getCarById(car_ID);
 
-      // Create a payment intent with Stripe
-      const paymentIntent = await stripe.paymentIntents.create({
-        amount: calculateAmount(total_days, carDetails.daily_rate),
-        currency: "usd",
-        description: `Renting ${carDetails.model} for ${total_days} days`,
+      // Create a checkout session with Stripe
+      const session = await stripe.checkout.sessions.create({
         payment_method_types: ["card"],
+        line_items: [
+          {
+            price_data: {
+              currency: "usd",
+              product_data: {
+                name: `Renting ${carDetails.model} for ${total_days} days`,
+              },
+              unit_amount: calculateAmount(total_days, carDetails.daily_rate),
+            },
+            quantity: 1,
+          },
+        ],
+        mode: "payment",
+        // success_url: "YOUR_SUCCESS_URL", // Redirect to this URL after successful payment
+        // cancel_url: "YOUR_CANCEL_URL",   // Redirect to this URL if the user cancels the payment
       });
 
-      // Return the client secret instead of the entire payment intent object
-      return { clientSecret: paymentIntent.client_secret };
+      // Return the session ID instead of the client secret
+      return { sessionId: session.id };
     } catch (error) {
       console.error(error);
       throw new Error("Internal Server Error");
     }
   }
 }
+
 const calculateAmount = (totalDays, daily_rate) => {
   console.log(totalDays * daily_rate);
   // Simple calculation for the total amount
-  return totalDays * daily_rate * 100; // Multiply by 100 to convert to cents (Stripe's currency)
+  return totalDays * daily_rate; // Multiply by 100 to convert to cents (Stripe's currency)
 };
 module.exports = CarModel;

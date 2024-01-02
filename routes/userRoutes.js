@@ -20,7 +20,6 @@ router.post(
 router.post(
   "/signup",
   [
-    check("username", "Username is required").notEmpty(),
     check("email", "Valid email is required").isEmail(),
     check("password", "Password must be at least 6 characters").isLength({
       min: 6,
@@ -33,7 +32,7 @@ router.post(
     check("gender", "Gender is required").notEmpty(),
   ],
   registerUser
-  
+
   // Use the registerUser function from the userController
 );
 

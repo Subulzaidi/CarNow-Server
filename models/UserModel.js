@@ -3,14 +3,23 @@
 const connectDB = require("../config/dbconnection");
 
 class UserModel {
-  async registerUser(username, email, password, address, phoneNo, gender) {
+  async registerUser(
+    FirstName,
+    LastName,
+    Email,
+    Phone,
+    Address,
+    DateOfBirth,
+    DriverLicenseNumber,
+    PasswordHash
+  ) {
     try {
       const connection = await connectDB();
 
       // Check if email is already taken
       const [existingUser] = await connection.execute(
-        "SELECT email FROM user WHERE email = ?",
-        [email]
+        "SELECT email FROM users WHERE email = ?",
+        [Email]
       );
 
       if (existingUser.length > 0) {
@@ -19,8 +28,17 @@ class UserModel {
 
       // Insert user into the database
       const [insertResult] = await connection.execute(
-        "INSERT INTO user (username, email, password, address, phoneNo, gender) VALUES (?, ?, ?, ?, ?, ?)",
-        [username, email, password, address, phoneNo, gender]
+        "INSERT INTO user (FirstName, LastName, Email, Phone, Address, DateOfBirth, DriverLicenseNumber, PasswordHash) VALUES (?, ?, ?, ?, ?, ?,?,?)",
+        [
+          FirstName,
+          LastName,
+          Email,
+          Phone,
+          Address,
+          DateOfBirth,
+          DriverLicenseNumber,
+          PasswordHash,
+        ]
       );
 
       return { message: "User registered!" };
@@ -36,7 +54,7 @@ class UserModel {
 
       // Query for user login
       const [results] = await connection.execute(
-        "SELECT * FROM user WHERE email = ? AND password = ?",
+        "SELECT * FROM users WHERE Email = ? AND PasswordHash = ?",
         [email, password]
       );
 

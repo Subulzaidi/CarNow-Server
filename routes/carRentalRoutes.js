@@ -11,7 +11,7 @@ router.get("/carrentals/:id", carrentalController.getCarRentalById);
 router.put("/carrentals/:id", carrentalController.updateCarRental);
 
 router.delete("/carrentals/:id", carrentalController.deleteCarRental);
-
+router.post("/my-records", carrentalController.GetAllMyRecord);
 router.post(
   "/rentcar",
   [

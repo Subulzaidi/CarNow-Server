@@ -19,6 +19,7 @@ const getAllCarRentals = asyncHandler(async (req, res) => {
 // @access Public
 const getCarRentalById = asyncHandler(async (req, res) => {
   try {
+ 
     const car = await CarModel.getCarById(req.params.id);
 
     res.status(200).json(car);
@@ -66,8 +67,20 @@ const deleteCarRental = asyncHandler(async (req, res) => {
 // @route POST /api/rentcar
 // @access Public
 const RentingACar = asyncHandler(async (req, res) => {
+  console.log(req.body);
   try {
     const result = await CarModel.rentCar(req.body);
+    res.status(200).json({ message: result });
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({ message: "Internal Server Error" });
+  }
+});
+
+const GetAllMyRecord = asyncHandler(async (req, res) => {
+  console.log(req.body);
+  try {
+    const result = await CarModel.GetAllRecord(req.body);
     res.status(200).json({ message: result });
   } catch (error) {
     console.error(error);
@@ -86,7 +99,7 @@ const makePayment = asyncHandler(async (req, res) => {
     LicenseNO,
     total_days,
   } = req.body;
-  console.log(req.body);
+
   try {
     // Make payment using the Payment model
     const paymentResult = await CarModel.makePayment(
@@ -112,6 +125,8 @@ module.exports = {
   getCarRentalById,
   updateCarRental,
   deleteCarRental,
+
+  GetAllMyRecord,
   RentingACar,
   makePayment,
 };
