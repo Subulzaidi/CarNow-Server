@@ -1,13 +1,39 @@
 // Sample CarModel.js
 const stripe = require("stripe")(process.env.STRIPE_SECRET_KEY);
 const connectDB = require("../config/dbconnection");
+const moment = require("moment"); // Import the moment library for date handling
 
 class CarModel {
   static async getAllCars() {
     try {
       const connection = await connectDB();
-      const [rows, fields] = await connection.query("SELECT * FROM cars ");
-      return rows;
+      const [carsRows, fields] = await connection.query("SELECT * FROM cars");
+
+      // Check if end_date is less than the current date
+      const currentDate = moment().format("YYYY-MM-DD");
+
+      // Retrieve end_date from rented_car_records for each car
+      for (const car of carsRows) {
+        const [recordsRows] = await connection.query(
+          "SELECT end_date FROM rented_car_records WHERE car_ID = ? ORDER BY end_date DESC LIMIT 1",
+          [car.car_id]
+        );
+
+        if (recordsRows.length > 0) {
+          const latestEndDate = recordsRows[0].end_date;
+
+          if (moment(latestEndDate).isBefore(currentDate)) {
+            // Update the availability attribute to 1
+            await connection.query(
+              "UPDATE cars SET availability = 1 WHERE car_id = ?",
+              [car.car_id]
+            );
+            car.availability = 1; // Update the in-memory object as well
+          }
+        }
+      }
+
+      return carsRows;
     } catch (error) {
       console.error(error);
       throw new Error("Internal Server Error");
