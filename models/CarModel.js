@@ -12,26 +12,55 @@ class CarModel {
       // Check if end_date is less than the current date
       const currentDate = moment().format("YYYY-MM-DD");
 
-      // Retrieve end_date from rented_car_records for each car
-      for (const car of carsRows) {
-        const [recordsRows] = await connection.query(
-          "SELECT end_date FROM rented_car_records WHERE car_ID = ? ORDER BY end_date DESC LIMIT 1",
-          [car.car_id]
-        );
-
-        if (recordsRows.length > 0) {
-          const latestEndDate = recordsRows[0].end_date;
-
-          if (moment(latestEndDate).isBefore(currentDate)) {
-            // Update the availability attribute to 1
-            await connection.query(
-              "UPDATE cars SET availability = 1 WHERE car_id = ?",
-              [car.car_id]
+      // Use Promise.all to wait for all asynchronous operations to complete
+      await Promise.all(
+        carsRows.map(async (car) => {
+          try {
+            const [carAvailable] = await connection.query(
+              "SELECT id FROM cars WHERE availability = ?",
+              [0]
             );
-            car.availability = 1; // Update the in-memory object as well
+
+            if (carAvailable.length > 0) {
+              const carId = carAvailable[0].id;
+
+              const [recordsRows] = await connection.query(
+                "SELECT end_date FROM rented_car_records WHERE car_ID = ?",
+                [carId]
+              );
+
+              if (recordsRows.length > 0) {
+                const latestEndDate = recordsRows[0].end_date;
+
+                if (moment(latestEndDate).isBefore(currentDate)) {
+                  // Update the availability attribute to 1
+                  const updateCarQuery =
+                    "UPDATE cars SET availability = ? WHERE id = ?";
+                  const availabilityValue = 1;
+                  await connection.execute(updateCarQuery, [
+                    availabilityValue,
+                    carId,
+                  ]);
+                } else if (moment(latestEndDate).isAfter(currentDate)) {
+                  // Update the availability attribute to 0
+                  const updateCarQuery =
+                    "UPDATE cars SET availability = ? WHERE id = ?";
+                  const availabilityValue = 0;
+                  await connection.execute(updateCarQuery, [
+                    availabilityValue,
+                    carId,
+                  ]);
+                }
+              }
+            }
+          } catch (error) {
+            console.error(
+              `Error processing car ${car.car_id}: ${error.message}`
+            );
+            // Handle the error as needed, e.g., log it or throw it
           }
-        }
-      }
+        })
+      );
 
       return carsRows;
     } catch (error) {
@@ -39,6 +68,8 @@ class CarModel {
       throw new Error("Internal Server Error");
     }
   }
+
+  // ... (rest of your CarModel class)
 
   static async getCarById(id) {
     try {

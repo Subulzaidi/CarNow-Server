@@ -1,6 +1,7 @@
 // controllers/userController.js
 
 const { validationResult } = require("express-validator");
+const jwt = require("jsonwebtoken");
 const User = require("../models/UserModel");
 
 const user = new User();
@@ -35,7 +36,24 @@ const loginUser = async (req, res) => {
   }
 
   const result = await user.loginUser(email, password);
-  return res.json(result);
+
+  if (!result.error) {
+    // Generate a token
+    const token = jwt.sign(
+      { userId: result.user.id },
+      process.env.secrets_cy_of_tc,
+      {
+        expiresIn: "4d", // You can customize the expiration time
+      }
+    );
+
+    // Omit sensitive information from the response
+    result.user.password = undefined;
+
+    return res.json({ token, ...result });
+  } else {
+    return res.status(401).json(result);
+  }
 };
 
 module.exports = {
