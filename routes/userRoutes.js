@@ -28,7 +28,7 @@ router.post(
       min: 6,
     }),
     check("address", "Adrdress is required").notEmpty(),
-    check("phoneNo", "Phone no is required").notEmpty(),
+    check("Phone", "Phone no is required").notEmpty(),
     check("gender", "Gender is required").notEmpty(),
   ],
   registerUser

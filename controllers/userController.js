@@ -1,5 +1,3 @@
-// controllers/userController.js
-
 const { validationResult } = require("express-validator");
 const jwt = require("jsonwebtoken");
 const User = require("../models/UserModel");
@@ -13,19 +11,43 @@ const registerUser = async (req, res) => {
     return res.status(400).json({ errors: errors.array() });
   }
 
-  const { username, email, password, address, phoneNo, gender } = req.body;
-  if (!username || !password || !email || !address || !phoneNo || !gender) {
+  const {
+    firstName,
+    lastName,
+    email,
+    Phone,
+    address,
+    dateOfBirth,
+    driverLicenseNumber,
+    password,
+    gender,
+  } = req.body;
+
+  if (
+    !firstName ||
+    !lastName ||
+    !email ||
+    !Phone ||
+    !address ||
+    !dateOfBirth ||
+    !driverLicenseNumber ||
+    !password ||
+    !gender
+  ) {
     return res.status(400).json({ error: "All fields are required" });
   }
 
-  const result = await user.registerUser(
-    username,
+  const result = await user.registerUser({
+    firstName,
+    lastName,
     email,
-    password,
+    Phone,
     address,
-    phoneNo,
-    gender
-  );
+    dateOfBirth,
+    driverLicenseNumber,
+    password,
+    gender,
+  });
   return res.json(result);
 };
 
